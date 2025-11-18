@@ -1,28 +1,12 @@
 'use client';
-export const dynamic = 'force-dynamic';
-import React, { useState, useRef, useEffect } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import React, { useState, useRef } from "react";
+import { useRouter } from "next/navigation";
 import FixLayout from "../../../components/FixLayout";
 
 export default function ClientAddProject() {
   const router = useRouter();
-  const searchParams = useSearchParams();
 
-  // --- Defer searchParams until client mounted ---
-  const [id, setId] = useState(null);
-  const [ready, setReady] = useState(false);
-
-  useEffect(() => {
-    const paramId = searchParams.get("id");
-    setId(paramId);
-    setReady(true);
-  }, [searchParams]);
-
-  if (!ready) return null;
-
-  const isEditMode = Boolean(id);
-
-  // --- State ---
+  // --- State Form ---
   const [formData, setFormData] = useState({
     title: "",
     summary: "",
@@ -34,7 +18,6 @@ export default function ClientAddProject() {
   const [proposalFile, setProposalFile] = useState(null);
   const [errors, setErrors] = useState({});
   const [submitting, setSubmitting] = useState(false);
-  const [loading, setLoading] = useState(false);
 
   const projectPhotoInputRef = useRef(null);
   const proposalInputRef = useRef(null);
@@ -46,63 +29,6 @@ export default function ClientAddProject() {
     "Smart City",
     "Transportasi Ramah Lingkungan"
   ];
-
-  // Fetch project data if in edit mode
-  useEffect(() => {
-    if (isEditMode) fetchProjectData();
-  }, [id]);
-
-  const fetchProjectData = async () => {
-    setLoading(true);
-    try {
-      const token = localStorage.getItem("token");
-      if (!token) {
-        alert("Session expired. Please login again.");
-        router.push("/login");
-        return;
-      }
-
-      const backendUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
-      const response = await fetch(`${backendUrl}/api/projects/${id}`, {
-        headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
-      });
-
-      if (response.ok) {
-        const project = await response.json();
-        setFormData({
-          title: project.title || "",
-          summary: project.summary || "",
-          evaluation: project.evaluation || "",
-          suggestion: project.suggestion || "",
-          theme: project.theme || ""
-        });
-
-        if (project.projectPhotoUrls?.length > 0) {
-          setProjectPhotos(project.projectPhotoUrls.map(url => ({
-            preview: url,
-            isExisting: true,
-            url
-          })));
-        }
-
-        if (project.proposalDriveLink) {
-          setProposalFile({
-            name: project.proposalDriveLink.fileName || "Proposal.pdf",
-            isExisting: true,
-            url: project.proposalDriveLink.downloadLink
-          });
-        }
-      } else {
-        const errData = await response.json().catch(() => ({ message: "Unknown error" }));
-        alert(`Gagal memuat data proyek: ${errData.message}`);
-      }
-    } catch (err) {
-      console.error(err);
-      alert("Terjadi kesalahan saat memuat data proyek");
-    } finally {
-      setLoading(false);
-    }
-  };
 
   // --- Handlers ---
   const handleChange = (e) => {
@@ -123,7 +49,7 @@ export default function ClientAddProject() {
         alert(`${file.name} terlalu besar, maksimal 5MB`);
         return null;
       }
-      return { file, preview: URL.createObjectURL(file), isExisting: false };
+      return { file, preview: URL.createObjectURL(file) };
     }).filter(Boolean);
 
     setProjectPhotos(prev => [...prev, ...newPhotos]);
@@ -133,7 +59,7 @@ export default function ClientAddProject() {
     setProjectPhotos(prev => {
       const updated = [...prev];
       const removed = updated.splice(index, 1)[0];
-      if (!removed.isExisting) URL.revokeObjectURL(removed.preview);
+      URL.revokeObjectURL(removed.preview);
       return updated;
     });
   };
@@ -149,8 +75,7 @@ export default function ClientAddProject() {
       alert("File terlalu besar, maksimal 10MB");
       return;
     }
-    setProposalFile({ file, name: file.name, isExisting: false });
-    if (errors.proposal) setErrors(prev => ({ ...prev, proposal: "" }));
+    setProposalFile({ file, name: file.name });
   };
 
   const removeProposal = () => {
@@ -158,27 +83,14 @@ export default function ClientAddProject() {
     if (proposalInputRef.current) proposalInputRef.current.value = "";
   };
 
-  // --- Validation ---
+  // --- Validate ---
   const validate = () => {
     const newErrors = {};
-
     if (!formData.title?.trim()) newErrors.title = "Judul proyek harus diisi";
-    else if (formData.title.trim().length < 2) newErrors.title = "Judul minimal 2 karakter";
-
     if (!formData.theme || formData.theme === "Pilih Kategori") newErrors.theme = "Kategori harus dipilih";
-
     if (!formData.summary?.trim()) newErrors.summary = "Ringkasan harus diisi";
-    else if (formData.summary.trim().length < 10) newErrors.summary = "Ringkasan minimal 10 karakter";
-
-    if (!formData.evaluation?.trim() && !isEditMode) newErrors.evaluation = "Evaluasi harus diisi";
-    else if (formData.evaluation?.trim().length < 10) newErrors.evaluation = "Evaluasi minimal 10 karakter";
-
-    if (!formData.suggestion?.trim() && !isEditMode) newErrors.suggestion = "Saran pengembangan harus diisi";
-    else if (formData.suggestion?.trim().length < 10) newErrors.suggestion = "Saran minimal 10 karakter";
-
-    if (!isEditMode && projectPhotos.length === 0) newErrors.projectPhoto = "Foto proyek harus diupload";
-
-    if (!isEditMode && !proposalFile) newErrors.proposal = "Proposal PDF harus diupload";
+    if (projectPhotos.length === 0) newErrors.projectPhoto = "Foto proyek harus diupload";
+    if (!proposalFile) newErrors.proposal = "Proposal PDF harus diupload";
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -187,12 +99,9 @@ export default function ClientAddProject() {
   // --- Submit ---
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!validate()) {
-      alert("Mohon lengkapi semua field yang wajib diisi");
-      return;
-    }
-    setSubmitting(true);
+    if (!validate()) return alert("Mohon lengkapi semua field yang wajib diisi");
 
+    setSubmitting(true);
     try {
       const token = localStorage.getItem("token");
       if (!token) { alert("Session expired"); router.push("/login"); return; }
@@ -204,28 +113,20 @@ export default function ClientAddProject() {
       formDataToSend.append("suggestion", formData.suggestion.trim());
       formDataToSend.append("theme", formData.theme);
 
-      projectPhotos.forEach((photo) => {
-        if (!photo.isExisting && photo.file) formDataToSend.append("projectPhotos", photo.file);
-      });
-
-      if (proposalFile && !proposalFile.isExisting && proposalFile.file) {
-        formDataToSend.append("proposal", proposalFile.file);
-      }
+      projectPhotos.forEach(photo => formDataToSend.append("projectPhotos", photo.file));
+      if (proposalFile?.file) formDataToSend.append("proposal", proposalFile.file);
 
       const backendUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
-      const url = isEditMode ? `${backendUrl}/api/projects/${id}` : `${backendUrl}/api/projects`;
-      const method = isEditMode ? "PUT" : "POST";
+      const response = await fetch(`${backendUrl}/api/projects`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
+        body: formDataToSend
+      });
 
-      const response = await fetch(url, { method, headers: { Authorization: `Bearer ${token}` }, body: formDataToSend });
-      const text = await response.text();
-      let data;
-      try { data = JSON.parse(text); } catch { data = null; }
+      if (!response.ok) throw new Error("Gagal menambahkan proyek");
 
-      if (!response.ok) throw new Error(data?.message || "Server error");
-
-      alert(`Proyek berhasil ${isEditMode ? "diperbarui" : "ditambahkan"}!`);
-      setTimeout(() => { router.push("/proyek-saya"); router.refresh(); }, 100);
-
+      alert("Proyek berhasil ditambahkan!");
+      router.push("/proyek-saya");
     } catch (err) {
       console.error(err);
       alert(`Error: ${err.message}`);
@@ -234,30 +135,86 @@ export default function ClientAddProject() {
     }
   };
 
-  if (loading) {
-    return (
-      <FixLayout>
-        <div className="min-h-screen flex items-center justify-center bg-[#FCFCFC]">
-          <div className="text-center">
-            <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-[#004A74]"></div>
-            <p className="text-gray-500 mt-4">{isEditMode ? "Memuat data proyek..." : "Mempersiapkan form..."}</p>
-            {isEditMode && <p className="text-sm text-gray-400 mt-2">ID: {id}</p>}
-          </div>
-        </div>
-      </FixLayout>
-    );
-  }
-
-  // --- Render form ---
   return (
     <FixLayout>
       <div className="min-h-screen bg-[#FCFCFC]">
         <div className="max-w-4xl mx-auto px-6 md:px-8 py-8">
-          <h1 className="text-3xl font-bold text-[#004A74]">{isEditMode ? "Edit Proyek" : "Tambah Proyek Baru"}</h1>
-          {/* --- Form --- */}
-          <form onSubmit={handleSubmit} className="bg-white rounded-lg border border-gray-200 p-6 mt-6">
-            {/* Form fields here... */}
-            {/* Kamu bisa copy seluruh JSX form dari kode sebelumnya */}
+          <h1 className="text-3xl font-bold text-[#004A74]">Tambah Proyek Baru</h1>
+
+          <form onSubmit={handleSubmit} className="bg-white rounded-lg border border-gray-200 p-6 mt-6 space-y-6">
+            {/* Judul */}
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">Judul Proyek *</label>
+              <input
+                type="text"
+                name="title"
+                value={formData.title}
+                onChange={handleChange}
+                className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-1 ${errors.title ? "border-red-500 focus:ring-red-500" : "border-gray-300 focus:border-[#004A74] focus:ring-[#004A74]"}`}
+                placeholder="Masukkan judul proyek"
+              />
+              {errors.title && <p className="text-red-500 text-xs mt-1">{errors.title}</p>}
+            </div>
+
+            {/* Kategori */}
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">Kategori *</label>
+              <select
+                name="theme"
+                value={formData.theme}
+                onChange={handleChange}
+                className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-1 ${errors.theme ? "border-red-500 focus:ring-red-500" : "border-gray-300 focus:border-[#004A74] focus:ring-[#004A74]"}`}
+              >
+                {categories.map((cat, idx) => (
+                  <option key={idx} value={cat} disabled={cat === "Pilih Kategori"}>{cat}</option>
+                ))}
+              </select>
+              {errors.theme && <p className="text-red-500 text-xs mt-1">{errors.theme}</p>}
+            </div>
+
+            {/* Ringkasan */}
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">Ringkasan Proyek *</label>
+              <textarea
+                name="summary"
+                value={formData.summary}
+                onChange={handleChange}
+                rows="3"
+                className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-1 ${errors.summary ? "border-red-500 focus:ring-red-500" : "border-gray-300 focus:border-[#004A74] focus:ring-[#004A74]"}`}
+                placeholder="Ringkasan singkat tentang proyek"
+              />
+              {errors.summary && <p className="text-red-500 text-xs mt-1">{errors.summary}</p>}
+            </div>
+
+            {/* Upload Foto */}
+            <div className={`border-2 border-dashed rounded-lg p-6 text-center ${errors.projectPhoto ? "border-red-500" : "border-gray-300"}`}>
+              <input ref={projectPhotoInputRef} type="file" accept="image/png,image/jpeg,image/jpg" multiple className="hidden" onChange={handleProjectPhotoChange} />
+              <button type="button" onClick={() => projectPhotoInputRef.current?.click()} className="px-4 py-2 bg-gray-100 rounded-lg">Tambah Foto</button>
+              <div className="flex flex-wrap gap-4 mt-4">
+                {projectPhotos.map((photo, idx) => (
+                  <div key={idx} className="relative">
+                    <img src={photo.preview} alt="" className="w-48 h-32 object-cover rounded-lg border border-gray-200" />
+                    <button type="button" onClick={() => removeProjectPhoto(idx)} className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1">X</button>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Upload Proposal */}
+            <div className={`border-2 border-dashed rounded-lg p-6 text-center ${errors.proposal ? "border-red-500" : "border-gray-300"}`}>
+              <input ref={proposalInputRef} type="file" accept="application/pdf" className="hidden" onChange={handleProposalChange} />
+              {!proposalFile ? (
+                <button type="button" onClick={() => proposalInputRef.current?.click()} className="px-4 py-2 bg-gray-100 rounded-lg">Pilih File PDF</button>
+              ) : (
+                <div className="flex justify-between items-center bg-gray-50 p-4 rounded-lg">
+                  <p>{proposalFile.name}</p>
+                  <button type="button" onClick={removeProposal} className="text-red-500">X</button>
+                </div>
+              )}
+            </div>
+
+            {/* Submit */}
+            <button type="submit" disabled={submitting} className="w-full px-6 py-3 bg-[#004A74] text-white rounded-lg">{submitting ? "Menyimpan..." : "Simpan Proyek"}</button>
           </form>
         </div>
       </div>
