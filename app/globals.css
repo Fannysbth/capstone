@@ -1,0 +1,94 @@
+@import "tailwindcss";
+
+:root {
+  --background: #ffffff;
+  --foreground: #171717;
+}
+
+@font-face {
+  font-family: 'Gama-Sans';
+  src: url('/fonts/Gama-Sans-Regular.otf') format('truetype');
+  font-weight: 400;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'Gama-Sans';
+  src: url('/fonts/Gama-Sans-Medium.ttf') format('truetype');
+  font-weight: 500;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'Gama-Sans';
+  src: url('/fonts/Gama-Sans-SemiBold.ttf') format('truetype');
+  font-weight: 600;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'Gama-Sans';
+  src: url('/fonts/Gama-Sans-Bold.ttf') format('truetype');
+  font-weight: 700;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'Gama-Sans';
+  src: url('/fonts/Gama-Sans-ExtraBold.ttf') format('truetype');
+  font-weight: 800;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'Gama-Sans';
+  src: url('/fonts/Gama-Sans-Italic.ttf') format('truetype');
+  font-weight: 400;
+  font-style: italic;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #0a0a0a;
+    --foreground: #ededed;
+  }
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: 'Gama-Sans', Arial, Helvetica, sans-serif;
+}
+
+/* Gama Serif family for headings in header */
+@font-face {
+  font-family: 'Gama-Serif';
+  src: url('/fonts/Gama-Serif-Regular.otf') format('truetype');
+  font-weight: 400;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'Gama-Serif';
+  src: url('/fonts/Gama-Serif-Bold.otf') format('truetype');
+  font-weight: 700;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'Gama-Serif';
+  src: url('/fonts/Gama-Serif-Italic.otf') format('truetype');
+  font-weight: 400;
+  font-style: italic;
+}
+
+.gama-serif {
+  font-family: 'Gama-Serif', Georgia, 'Times New Roman', serif;
+}

@@ -1,0 +1,251 @@
+"use client";
+
+import Link from "next/link";
+import { usePathname, useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
+import { 
+  ArrowRightOnRectangleIcon,   // login
+  ArrowLeftOnRectangleIcon,    // logout
+} from "@heroicons/react/24/outline";
+import { UserCircleIcon } from "@heroicons/react/24/solid";
+
+export default function Header() {
+  const pathname = usePathname();
+  const router = useRouter();
+  const [username, setUsername] = useState("");
+  const [profilePhoto, setProfilePhoto] = useState(null);
+  const [userId, setUserId] = useState(null);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const checkAuthStatus = async () => {
+      try {
+        setIsLoading(true);
+        // Check if user is authenticated by calling backend
+        const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:5000/api'}/auth/me`, {
+          method: 'GET',
+          credentials: 'include',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        });
+
+        if (response.ok) {
+          const userData = await response.json();
+          setIsLoggedIn(true);
+          setUsername(userData.groupName || userData.name || 'User');
+          setProfilePhoto(userData.teamPhotoUrl || null);
+          setUserId(userData._id || userData.id);
+          
+          // Store in localStorage for quick access
+          localStorage.setItem("isLoggedIn", "true");
+          localStorage.setItem("username", userData.groupName || userData.name || 'User');
+          localStorage.setItem("userId", userData._id || userData.id);
+          localStorage.setItem("user", JSON.stringify(userData));
+        } else {
+          // Not authenticated
+          handleCleanLogout();
+        }
+      } catch (error) {
+        console.error('Error checking auth status:', error);
+        // Fallback to localStorage if backend is unavailable
+        const savedLogin = localStorage.getItem("isLoggedIn") === "true";
+        const savedUsername = localStorage.getItem("username");
+        const savedUserId = localStorage.getItem("userId");
+        const savedUser = localStorage.getItem("user");
+        
+        if (savedLogin && savedUser) {
+          const parsedUser = JSON.parse(savedUser);
+          setIsLoggedIn(true);
+          setUsername(savedUsername || 'User');
+          setUserId(savedUserId);
+          setProfilePhoto(parsedUser?.teamPhotoUrl || null);
+        } else {
+          handleCleanLogout();
+        }
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    checkAuthStatus();
+  }, []);
+
+  const handleCleanLogout = () => {
+    setIsLoggedIn(false);
+    setUsername("");
+    setProfilePhoto(null);
+    setUserId(null);
+    localStorage.removeItem("isLoggedIn");
+    localStorage.removeItem("username");
+    localStorage.removeItem("userId");
+    localStorage.removeItem("user");
+  };
+
+  const handleLogin = () => {
+    router.push("/login");
+  };
+
+  const handleLogout = async () => {
+    try {
+      // Call backend logout endpoint
+      await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:5000/api'}/auth/logout`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+    } catch (error) {
+      console.error('Error during logout:', error);
+    } finally {
+      // Always clean up frontend state
+      handleCleanLogout();
+      router.push("/");
+    }
+  };
+
+  // Menu items - "Projek" and "Profil" hidden when logged out
+  const menu = [
+    { name: "Beranda", href: "/" },
+    { name: "Katalog", href: "/katalog" },
+    // only show these when logged in
+    ...(isLoggedIn ? [
+      { name: "Riwayat", href: "/history-request" },
+      { name: "Proyek", href: "/proyek-saya" },
+      { name: "Profil", href: userId ? `/profil/${userId}` : "/profil" }
+    ] : []),
+  ];
+
+  // Show loading state
+  if (isLoading) {
+    return (
+      <header className="w-full bg-[#08375E] text-white shadow-md border-b border-[#0f4c75]">
+        {/* TOP HEADER */}
+        <div className="max-w-7xl mx-auto flex items-center gap-4 py-7 px-6">
+          <img
+            src="/assets/images/ugm-logo.png"
+            alt="Logo UGM"
+            className="h-14 w-auto"
+          />
+          <div className="gama-serif">
+            <h1 className="text-lg font-semibold leading-tight tracking-wide">
+              CAPSTONE CONNECTOR
+            </h1>
+            <h2 className="text-sm tracking-wide">
+              DEPARTEMEN TEKNIK ELEKTRO DAN TEKNOLOGI INFORMASI
+            </h2>
+            <h2 className="text-sm tracking-wide">UNIVERSITAS GADJAH MADA</h2>
+          </div>
+        </div>
+
+        {/* NAVBAR - Loading state */}
+        <nav className="w-full bg-[#0A3E66] text-white text-sm font-medium select-none">
+          <ul className="max-w-7xl mx-auto flex items-center">
+            <li className="px-6 py-4 border-r border-[#0f4c75]">
+              <div className="w-20 h-4 bg-gray-400 animate-pulse rounded"></div>
+            </li>
+            <li className="flex-1"></li>
+            <li className="px-6 py-4">
+              <div className="w-16 h-4 bg-gray-400 animate-pulse rounded"></div>
+            </li>
+          </ul>
+        </nav>
+      </header>
+    );
+  }
+
+  return (
+    <header className="w-full bg-[#08375E] text-white shadow-md border-b border-[#0f4c75]">
+      
+      {/* TOP HEADER */}
+      <div className="max-w-7xl mx-auto flex items-center gap-4 py-7 px-6">
+        <img
+          src="/assets/images/ugm-logo.png"
+          alt="Logo UGM"
+          className="h-14 w-auto cursor-pointer"
+          onClick={() => router.push("/")}
+        />
+        <div className="gama-serif">
+          <h1 className="text-lg font-semibold leading-tight tracking-wide">
+            CAPSTONE CONNECTOR
+          </h1>
+          <h2 className="text-sm tracking-wide">
+            DEPARTEMEN TEKNIK ELEKTRO DAN TEKNOLOGI INFORMASI
+          </h2>
+          <h2 className="text-sm tracking-wide">UNIVERSITAS GADJAH MADA</h2>
+        </div>
+      </div>
+
+      {/* NAVBAR */}
+      <nav className="w-full bg-[#0A3E66] text-white text-sm font-medium select-none">
+        <ul className="max-w-7xl mx-auto flex items-center">
+
+          {/* MENU ITEMS */}
+          {menu.map((item) => {
+            const active = pathname === item.href;
+
+            return (
+              <li
+                key={item.name}
+                className={`px-6 py-4 cursor-pointer border-r border-[#0f4c75] ${
+                  active
+                    ? "bg-[#FED400] text-black font-semibold"
+                    : "hover:text-[#FED400] hover:bg-[#0d4f82]"
+                }`}
+              >
+                <Link href={item.href}>{item.name.toUpperCase()}</Link>
+              </li>
+            );
+          })}
+
+          <li className="flex-1"></li>
+
+          {/* LOGIN / LOGOUT BUTTON */}
+          {!isLoggedIn ? (
+            <li
+              onClick={handleLogin}
+              className="flex items-center gap-2 px-6 py-4 cursor-pointer hover:text-[#FED400] hover:bg-[#0d4f82] border-l border-[#0f4c75]"
+            >
+              <ArrowRightOnRectangleIcon className="w-5 h-5" />
+              LOGIN
+            </li>
+          ) : (
+            <>
+              <li className="flex items-center gap-2 px-6 py-4 border-l border-[#0f4c75]">
+                {/* FOTO PROFIL ATAU ICON */}
+                {profilePhoto ? (
+                  <img
+                    src={profilePhoto}
+                    alt="Profile"
+                    onError={(e) => { 
+                      e.target.src = "/assets/images/default-user.png"; 
+                    }}
+                    className="w-8 h-8 rounded-full object-cover border border-white"
+                  />
+                ) : (
+                  <UserCircleIcon className="w-8 h-8 text-gray-300" />
+                )}
+
+                {/* USERNAME */}
+                <span className="font-medium tracking-wide">
+                  {username?.toUpperCase()}
+                </span>
+              </li>
+              <li
+                onClick={handleLogout}
+                className="flex items-center gap-2 px-6 py-4 cursor-pointer hover:bg-red-700 border-l border-[#0f4c75]"
+              >
+                <ArrowLeftOnRectangleIcon className="w-5 h-5" />
+                LOGOUT
+              </li>
+            </>
+          )}
+
+        </ul>
+      </nav>
+
+    </header>
+  );
+}
