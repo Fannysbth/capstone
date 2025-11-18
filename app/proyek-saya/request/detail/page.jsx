@@ -5,6 +5,9 @@ import { useRouter, useSearchParams } from "next/navigation";
 import FixLayout from "../../../../components/FixLayout";
 import RequestAPI from "../../../../lib/request-api";
 import ProjectAPI from "../../../../lib/project-api";
+export const dynamic = 'force-dynamic';
+import { Suspense } from 'react';
+
 
 function formatDate(iso) {
     if (!iso) return "-";
@@ -235,6 +238,7 @@ export default function RequestDetailPage() {
     }
 
     return (
+        <Suspense fallback={<div>Loading...</div>}>
         <FixLayout>
             <div className="max-w-7xl mx-auto px-6 md:px-8 py-8">
                 {/* Breadcrumb */}
@@ -432,5 +436,6 @@ export default function RequestDetailPage() {
                 )}
             </div>
         </FixLayout>
+        </Suspense>
     );
 }

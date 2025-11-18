@@ -1,15 +1,32 @@
-"use client";
+'use client';
 
 import React, { useState, useRef, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import FixLayout from "../../../components/FixLayout";
 
+// Force dynamic rendering to avoid prerendering issues
+export const dynamic = 'force-dynamic';
+
 export default function AddProjectPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const id = searchParams.get("id");
+  
+  // --- Defer searchParams until client mounted ---
+  const [id, setId] = useState(null);
+  const [ready, setReady] = useState(false);
+
+  useEffect(() => {
+    const paramId = searchParams.get("id");
+    setId(paramId);
+    setReady(true);
+  }, [searchParams]);
+
+  // Wait until client-side params are ready
+  if (!ready) return null;
+
   const isEditMode = Boolean(id);
 
+  // --- State ---
   const [formData, setFormData] = useState({
     title: "",
     summary: "",
@@ -17,9 +34,7 @@ export default function AddProjectPage() {
     suggestion: "",
     theme: ""
   });
-
-const [projectPhotos, setProjectPhotos] = useState([]);
-
+  const [projectPhotos, setProjectPhotos] = useState([]);
   const [proposalFile, setProposalFile] = useState(null);
   const [errors, setErrors] = useState({});
   const [submitting, setSubmitting] = useState(false);
@@ -30,9 +45,9 @@ const [projectPhotos, setProjectPhotos] = useState([]);
 
   const categories = [
     "Pilih Kategori",
-    "Kesehatan", 
-    "Pengelolaan Sampah", 
-    "Smart City", 
+    "Kesehatan",
+    "Pengelolaan Sampah",
+    "Smart City",
     "Transportasi Ramah Lingkungan"
   ];
 
@@ -381,6 +396,7 @@ const removeProjectPhoto = (index) => {
 }
 
   return (
+    <Suspense fallback={<div>Loading...</div>}>
     <FixLayout>
       <div className="min-h-screen bg-[#FCFCFC]">
         <div className="max-w-4xl mx-auto px-6 md:px-8 py-8">
@@ -663,5 +679,6 @@ const removeProjectPhoto = (index) => {
         </div>
       </div>
     </FixLayout>
+    </Suspense>
   );
 }

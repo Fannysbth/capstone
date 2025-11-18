@@ -6,6 +6,9 @@ import FixLayout from "../../../components/FixLayout";
 // Replace mock helpers with API services
 import RequestAPI from "../../../lib/request-api";
 import ProjectAPI from "../../../lib/project-api";
+import { Suspense } from 'react';
+
+export const dynamic = 'force-dynamic';
 
 const ICONS = {
   approved: "/assets/icons/v.svg",
@@ -117,6 +120,7 @@ export default function RequestMasukPage() {
   };
 
   return (
+    <Suspense fallback={<div>Loading...</div>}>
     <FixLayout>
       <div className="min-h-screen bg-[#FCFCFC]">
         <div className="max-w-7xl mx-auto px-6 md:px-8 py-8">
@@ -284,5 +288,6 @@ export default function RequestMasukPage() {
         </div>
       </div>
     </FixLayout>
+    </Suspense>
   );
 }
