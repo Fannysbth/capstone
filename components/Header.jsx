@@ -16,85 +16,53 @@ export default function Header() {
   const [profilePhoto, setProfilePhoto] = useState(null);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
-  const [userId, setUserId] = useState(localStorage.getItem("userId") || null);
-
+  const [userId, setUserId] = useState(null);
+  
 useEffect(() => {
   const fetchUser = async () => {
     try {
+      // Cek localStorage dulu
+      const storedUser = localStorage.getItem("user");
+      if (storedUser) {
+        const parsedUser = JSON.parse(storedUser);
+        setUserId(parsedUser._id || parsedUser.id);
+        setUsername(parsedUser.groupName || parsedUser.name || 'User');
+        setProfilePhoto(parsedUser.teamPhotoUrl || null);
+        setIsLoggedIn(true);
+      }
+
+      // Fetch terbaru dari backend
       const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:5000/api'}/auth/me`, {
-  method: 'GET',
-  credentials: 'include',
-  headers: {
-    'Content-Type': 'application/json',
-  },
-});
+        method: 'GET',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' }
+      });
 
       if (res.ok) {
         const userData = await res.json();
         setUserId(userData._id || userData.id);
+        setUsername(userData.groupName || userData.name || 'User');
+        setProfilePhoto(userData.teamPhotoUrl || null);
+        setIsLoggedIn(true);
+
+        // Simpan ke localStorage
         localStorage.setItem("userId", userData._id || userData.id);
+        localStorage.setItem("username", userData.groupName || userData.name || 'User');
+        localStorage.setItem("user", JSON.stringify(userData));
+        localStorage.setItem("isLoggedIn", "true");
+      } else {
+        handleCleanLogout();
       }
     } catch (err) {
       console.error(err);
+    } finally {
+      setIsLoading(false);
     }
-  }
+  };
+
   fetchUser();
 }, []);
 
-
-  useEffect(() => {
-    const checkAuthStatus = async () => {
-      try {
-        setIsLoading(true);
-        // Check if user is authenticated by calling backend
-        const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:5000/api'}/auth/me`, {
-          method: 'GET',
-          credentials: 'include',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-        });
-
-        if (response.ok) {
-          const userData = await response.json();
-          setIsLoggedIn(true);
-          setUsername(userData.groupName || userData.name || 'User');
-          setProfilePhoto(userData.teamPhotoUrl || null);
-          setUserId(userData._id || userData.id);
-          
-          // Store in localStorage for quick access
-          localStorage.setItem("isLoggedIn", "true");
-          localStorage.setItem("username", userData.groupName || userData.name || 'User');
-          localStorage.setItem("userId", userData._id || userData.id);
-          localStorage.setItem("user", JSON.stringify(userData));
-        } else {
-          // Not authenticated
-          handleCleanLogout();
-        }
-      } catch (error) {
-        console.error('Error checking auth status:', error);
-        // Fallback to localStorage if backend is unavailable
-        const savedLogin = localStorage.getItem("isLoggedIn") === "true";
-        const savedUsername = localStorage.getItem("username");
-        const savedUserId = localStorage.getItem("userId");
-        const savedUser = localStorage.getItem("user");
-        
-        if (savedLogin && savedUser) {
-          const parsedUser = JSON.parse(savedUser);
-          setIsLoggedIn(true);
-          setUsername(savedUsername || 'User');
-          setUserId(savedUserId);
-          setProfilePhoto(parsedUser?.teamPhotoUrl || null);
-        } else {
-          handleCleanLogout();
-        }
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    checkAuthStatus();
-  }, []);
 
   const handleCleanLogout = () => {
     setIsLoggedIn(false);
