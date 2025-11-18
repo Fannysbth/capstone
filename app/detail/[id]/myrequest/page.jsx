@@ -28,7 +28,7 @@ function useProjectDetail(id) {
     setLoading(true);
     setError(null);
 
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL || "";
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL ;
     fetch(`${apiUrl}/api/projects/${id}`)
       .then(async (res) => {
         if (!res.ok) {
@@ -84,7 +84,7 @@ function useExistingRequest(projectId) {
     const fetchExistingRequest = async () => {
       try {
         setLoading(true);
-        const apiUrl = process.env.NEXT_PUBLIC_API_URL || "";
+        const apiUrl = process.env.NEXT_PUBLIC_API_URL ;
         const res = await fetch(`${apiUrl}/api/users/requests`, {
           credentials: "include",
           headers: { "Content-Type": "application/json" },
@@ -151,7 +151,7 @@ export default function MyRequestPage() {
     setSubmitting(true);
 
     try {
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || "";
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL ;
       
       // ✅ ENDPOINT YANG BENAR: /api/requests/:requestId
       const res = await fetch(`${apiUrl}/api/requests/${existingRequest.id}`, {
@@ -201,7 +201,7 @@ export default function MyRequestPage() {
     setSubmitError(null);
 
     try {
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || "";
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL ;
       
       // ✅ ENDPOINT YANG BENAR: /api/requests/:requestId/cancel
       const res = await fetch(`${apiUrl}/api/requests/${existingRequest.id}/cancel`, {

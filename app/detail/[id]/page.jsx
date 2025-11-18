@@ -85,7 +85,7 @@ export default function DetailPage() {
     const fetchProject = async () => {
       try {
         setLoading(true);
-        const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+        const apiUrl = process.env.NEXT_PUBLIC_API_URL ;
         
         console.log('Fetching project detail for ID:', projectId);
         
@@ -146,7 +146,7 @@ export default function DetailPage() {
   // Fetch comments from BE
   const fetchComments = async (projectId) => {
     try {
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL ;
       const response = await fetch(`${apiUrl}/api/comments/${projectId}`);
       
       if (response.ok) {
@@ -171,7 +171,7 @@ export default function DetailPage() {
   // Fetch ratings from BE and check user's existing rating
   const fetchRatings = async (projectId) => {
     try {
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL ;
       const response = await fetch(`${apiUrl}/api/ratings/${projectId}`);
       
       if (response.ok) {
@@ -224,10 +224,11 @@ export default function DetailPage() {
         return;
       }
 
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL ;
       
       const response = await fetch(`${apiUrl}/api/ratings/${projectId}`, {
         method: 'POST',
+        credentials: "include",
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -277,10 +278,11 @@ export default function DetailPage() {
         return;
       }
 
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL ;
       
       const response = await fetch(`${apiUrl}/api/ratings/${projectId}/${userRatingId}`, {
         method: 'DELETE',
+        credentials: "include",
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -322,10 +324,11 @@ export default function DetailPage() {
         return;
       }
 
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL ;
       
       const response = await fetch(`${apiUrl}/api/comments/${projectId}`, {
         method: 'POST',
+        credentials: "include",
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -355,10 +358,11 @@ export default function DetailPage() {
   const updateComment = async (commentId, text) => {
     try {
       const token = localStorage.getItem('token');
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL ;
       
       const response = await fetch(`${apiUrl}/api/comments/${projectId}/${commentId}`, {
         method: 'PUT',
+        credentials: "include",
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -387,10 +391,11 @@ export default function DetailPage() {
   const deleteComment = async (commentId) => {
     try {
       const token = localStorage.getItem('token');
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL ;
       
       const response = await fetch(`${apiUrl}/api/comments/${projectId}/${commentId}`, {
         method: 'DELETE',
+        credentials: "include",
         headers: {
           'Authorization': `Bearer ${token}`
         }

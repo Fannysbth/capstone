@@ -325,6 +325,7 @@ export default function AddProjectPage() {
 
       const response = await fetch(url, {
         method,
+        credentials: "include",
         headers: {
           Authorization: `Bearer ${token}`,
         },

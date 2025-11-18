@@ -49,6 +49,7 @@ export default function RequestFormClient({ project, onSubmitted }) {
       
       const response = await fetch(`${apiUrl}/api/requests/projects/${project.id}/request`, {
         method: "POST",
+        credentials: "include",
         headers: { 
           "Content-Type": "application/json",
           "Authorization": `Bearer ${token}`

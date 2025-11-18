@@ -119,6 +119,7 @@ export default function ClientAddProject() {
       const backendUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
       const response = await fetch(`${backendUrl}/api/projects`, {
         method: "POST",
+        credentials: "include",
         headers: { Authorization: `Bearer ${token}` },
         body: formDataToSend
       });
