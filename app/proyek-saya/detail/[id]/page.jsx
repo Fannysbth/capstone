@@ -58,7 +58,7 @@ export default function DetailProyekPage() {
         const token = localStorage.getItem("token");
         console.log("Fetching project with ID:", id);
 
-        const response = await fetch(`http://localhost:5000/api/projects/${id}`, {
+        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/projects/${id}`, {
           headers: { 
             Authorization: `Bearer ${token}`,
             "Content-Type": "application/json",
@@ -104,7 +104,7 @@ export default function DetailProyekPage() {
     if (window.confirm("Apakah Anda yakin ingin menghapus proyek ini?")) {
       try {
         const token = localStorage.getItem("token");
-        const response = await fetch(`http://localhost:5000/api/projects/${id}`, {
+        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/projects/${id}`, {
           method: "DELETE",
           credentials: "include",
           headers: { Authorization: `Bearer ${token}` },
