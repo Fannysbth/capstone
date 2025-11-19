@@ -195,59 +195,58 @@ export default function AddProjectPage() {
   };
 
   const validate = () => {
-    const newErrors = {};
+  const newErrors = {};
 
-    console.log('=== VALIDATING FORM ===');
-    console.log('isEditMode:', isEditMode);
-    console.log('formData:', formData);
-    console.log('projectPhotos:', projectPhotos);
-    console.log('proposalFile:', proposalFile);
+  console.log('=== VALIDATING FORM ===');
+  console.log('isEditMode:', isEditMode);
+  console.log('formData:', formData);
+  console.log('projectPhotos:', projectPhotos);
+  console.log('proposalFile:', proposalFile);
 
-    // Validate title
-    const titleValue = formData.title?.trim() || '';
-    if (!titleValue) {
-      newErrors.title = "Judul proyek harus diisi";
-    } else if (titleValue.length < 2) {
-      newErrors.title = "Judul proyek minimal 2 karakter";
-    }
-
-    // Validate theme
-    if (!formData.theme || formData.theme === "Pilih Kategori") {
-      newErrors.theme = "Kategori harus dipilih";
-    }
-
-    // Validate summary
-    const summaryValue = formData.summary?.trim() || '';
-    if (!summaryValue) {
-      newErrors.summary = "Ringkasan harus diisi";
-    } else if (summaryValue.length < 10) {
-      newErrors.summary = "Ringkasan minimal 10 karakter";
-    }
-
-    // Untuk edit mode, evaluation dan suggestion tidak wajib jika sudah ada data
-    const evaluationValue = formData.evaluation?.trim() || '';
-    if (!evaluationValue && !isEditMode) {
-      newErrors.evaluation = "Evaluasi harus diisi";
-    } else if (evaluationValue && evaluationValue.length < 10) {
-      newErrors.evaluation = "Evaluasi minimal 10 karakter";
-    }
-
-    const suggestionValue = formData.suggestion?.trim() || '';
-    if (!suggestionValue && !isEditMode) {
-      newErrors.suggestion = "Saran pengembangan harus diisi";
-    } else if (suggestionValue && suggestionValue.length < 10) {
-      newErrors.suggestion = "Saran pengembangan minimal 10 karakter";
-    }
-
-    // Untuk edit mode, foto dan proposal tidak wajib jika sudah ada
-    if (!isEditMode && projectPhotos.length === 0) {
-    newErrors.projectPhoto = "Foto proyek harus diupload";
-  } else if (isEditMode && projectPhotos.length === 0) {
-    // Opsional: beri warning tapi tidak error
-    console.warn("Tidak ada foto proyek");
+  // Validate title
+  const titleValue = formData.title?.trim() || '';
+  if (!titleValue) {
+    newErrors.title = "Judul proyek harus diisi";
+  } else if (titleValue.length < 2) {
+    newErrors.title = "Judul proyek minimal 2 karakter";
   }
 
-     if (!isEditMode && !proposalFile) {
+  // Validate theme
+  if (!formData.theme || formData.theme === "Pilih Kategori") {
+    newErrors.theme = "Kategori harus dipilih";
+  }
+
+  // Validate summary
+  const summaryValue = formData.summary?.trim() || '';
+  if (!summaryValue) {
+    newErrors.summary = "Ringkasan harus diisi";
+  } else if (summaryValue.length < 10) {
+    newErrors.summary = "Ringkasan minimal 10 karakter";
+  }
+
+  // Validate evaluation - tidak wajib untuk edit mode
+  const evaluationValue = formData.evaluation?.trim() || '';
+  if (!evaluationValue && !isEditMode) {
+    newErrors.evaluation = "Evaluasi harus diisi";
+  } else if (evaluationValue && evaluationValue.length < 10) {
+    newErrors.evaluation = "Evaluasi minimal 10 karakter";
+  }
+
+  // Validate suggestion - tidak wajib untuk edit mode
+  const suggestionValue = formData.suggestion?.trim() || '';
+  if (!suggestionValue && !isEditMode) {
+    newErrors.suggestion = "Saran pengembangan harus diisi";
+  } else if (suggestionValue && suggestionValue.length < 10) {
+    newErrors.suggestion = "Saran pengembangan minimal 10 karakter";
+  }
+
+  // Validasi foto - untuk mode edit, boleh tidak ada foto baru
+  if (!isEditMode && projectPhotos.length === 0) {
+    newErrors.projectPhoto = "Foto proyek harus diupload";
+  }
+
+  // Validasi proposal - untuk mode edit, proposal tidak wajib
+  if (!isEditMode && !proposalFile) {
     newErrors.proposal = "Proposal (PDF) harus diupload";
   }
 
@@ -286,26 +285,33 @@ export default function AddProjectPage() {
 
     // Untuk edit mode, kirim informasi foto yang masih ada
     if (isEditMode) {
-      // Kirim URL foto yang masih ada (tidak dihapus)
       const existingPhotos = projectPhotos
         .filter(photo => photo.isExisting)
         .map(photo => photo.url);
       
+      console.log('Existing photos to keep:', existingPhotos);
       formDataToSend.append('existingPhotos', JSON.stringify(existingPhotos));
     }
 
     // Append foto baru
+    let newPhotoCount = 0;
     projectPhotos.forEach((photo, index) => {
       if (!photo.isExisting && photo.file) {
         console.log(`Appending new photo ${index}:`, photo.file.name);
         formDataToSend.append("projectPhotos", photo.file);
+        newPhotoCount++;
       }
     });
+    console.log(`Total new photos: ${newPhotoCount}`);
 
-    // Untuk edit mode, hanya append proposal jika file baru
+    // Untuk proposal, append jika ada file baru
     if (proposalFile && !proposalFile.isExisting && proposalFile.file) {
       console.log('Appending new proposal:', proposalFile.file.name);
       formDataToSend.append("proposal", proposalFile.file);
+    } else if (isEditMode && !proposalFile) {
+      // Jika mode edit dan proposal dihapus, kirim flag untuk hapus proposal
+      console.log('No proposal file - keeping existing or removing');
+      formDataToSend.append("keepExistingProposal", "true");
     }
 
     // Debug: log all FormData entries
@@ -333,38 +339,38 @@ export default function AddProjectPage() {
       method,
       headers: {
         Authorization: `Bearer ${token}`,
-        // JANGAN set Content-Type untuk FormData, biarkan browser set otomatis
+        // JANGAN set Content-Type untuk FormData
       },
       body: formDataToSend,
     });
 
-      console.log("=== RESPONSE RECEIVED ===");
-      console.log("Response status:", response.status);
+    console.log("=== RESPONSE RECEIVED ===");
+    console.log("Response status:", response.status);
 
-      let responseData;
-      const responseText = await response.text();
-      
-      try {
-        responseData = JSON.parse(responseText);
-      } catch (parseError) {
-        console.error("Failed to parse JSON:", parseError);
-        console.error("Response text was:", responseText);
-        throw new Error("Server mengirim response yang tidak valid");
-      }
+    let responseData;
+    const responseText = await response.text();
+    
+    try {
+      responseData = JSON.parse(responseText);
+    } catch (parseError) {
+      console.error("Failed to parse JSON:", parseError);
+      console.error("Response text was:", responseText);
+      throw new Error("Server mengirim response yang tidak valid");
+    }
 
-      if (!response.ok) {
-        const errorMessage = responseData.message || responseData.error || `HTTP ${response.status}`;
-        throw new Error(errorMessage);
-      }
+    if (!response.ok) {
+      const errorMessage = responseData.message || responseData.error || `HTTP ${response.status}`;
+      throw new Error(errorMessage);
+    }
 
-      alert(`Proyek berhasil ${isEditMode ? "diperbarui" : "ditambahkan"}!`);
-      
-      setTimeout(() => {
-        router.push("/proyek-saya");
-        router.refresh();
-      }, 100);
+    alert(`Proyek berhasil ${isEditMode ? "diperbarui" : "ditambahkan"}!`);
+    
+    setTimeout(() => {
+      router.push("/proyek-saya");
+      router.refresh();
+    }, 100);
 
-    } catch (error) {
+  } catch (error) {
     console.error("Error:", error);
     alert(`Error: ${error.message}`);
   } finally {
